@@ -106,6 +106,8 @@ const SchedulePage = () => {
           ))
         )}
       </ul>
+
+      <button onClick={() => navigate("/history")}>View Attendance History</button>
     </div>
   );
 };
@@ -125,8 +127,15 @@ const ClassPage = () => {
   };
 
   const handleSubmit = () => {
-    console.log("Attendance submitted for:", decodedClassName);
-    console.log(attendance);
+    const date = new Date().toLocaleDateString();
+    const newRecord = {
+      className: decodedClassName,
+      date,
+      attendance,
+    };
+    const existingRecords = JSON.parse(localStorage.getItem("attendanceHistory") || "[]");
+    const updatedRecords = [...existingRecords, newRecord];
+    localStorage.setItem("attendanceHistory", JSON.stringify(updatedRecords));
     alert("Attendance submitted!");
   };
 
@@ -152,6 +161,50 @@ const ClassPage = () => {
   );
 };
 
+// Attendance History Page
+const HistoryPage = () => {
+  const history = JSON.parse(localStorage.getItem("attendanceHistory") || "[]");
+
+  return (
+    <div className="attendance-history">
+      <h2>Attendance History</h2>
+      {history.length === 0 ? (
+        <p>No attendance records yet.</p>
+      ) : (
+        <table border="1" cellPadding="10">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Class</th>
+              <th>Present Students</th>
+              <th>Absent Students</th>
+            </tr>
+          </thead>
+          <tbody>
+            {history.map((record, idx) => {
+              const present = Object.entries(record.attendance)
+                .filter(([_, marked]) => marked)
+                .map(([name]) => name);
+              const absent = Object.entries(record.attendance)
+                .filter(([_, marked]) => !marked)
+                .map(([name]) => name);
+
+              return (
+                <tr key={idx}>
+                  <td>{record.date}</td>
+                  <td>{record.className}</td>
+                  <td>{present.join(", ")}</td>
+                  <td>{absent.join(", ")}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+};
+
 // App Wrapper
 const App = () => {
   return (
@@ -160,6 +213,7 @@ const App = () => {
         <Route path="/" element={<AuthPage />} />
         <Route path="/schedule" element={<SchedulePage />} />
         <Route path="/class/:className" element={<ClassPage />} />
+        <Route path="/history" element={<HistoryPage />} />
       </Routes>
     </Router>
   );
